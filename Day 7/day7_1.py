@@ -1,58 +1,63 @@
 # not 982247
+# not 1277098
+
+answer = 0
 
 class Node:
-    def __init__(self, name):
+    def __init__(self, name, parent):
         self.name = name
         self.weight = 0
+        self.parent = parent
         self.children = []
-    
+
     def count_children(self):
+        global answer
         for child in self.children:
+            child.count_children()
             self.weight += child.weight
+        if self.weight <= 100000:
+            print(self.name, len(self.children), self.weight)
+            answer += self.weight
 
 
-def createNode(name):
-    node = Node(name)
+def createNode(name, parent):
+    node = Node(name, parent)
     return node
 
 
-def calculate_children_sum():
-    for node in nodes:
-        nodes[node].count_children()
+# def calculate_children_sum():
+#     nodes['/'].count_children()
 
 
-with open('Day 7/test_input.txt') as f:
+with open('test_input.txt') as f:
     lines = f.readlines()
 
 
 nodes = {}
 
-for i, line in enumerate(lines, 1):     # creates an object for each dir, adds it to a dict
-    if '$ cd' in line and '..' not in line:
-        dir_name = line.split()[2]
-        nodes[dir_name] = createNode(dir_name) # create every explored dir
-        for sub_line in lines[i:]:
-            if 'cd ..' in sub_line or  '$ cd' in sub_line:
-                break
-            if sub_line[0].isnumeric():     # 197934 sgwz.cdz
-                nodes[dir_name].weight += int(sub_line.split()[0])
-for i, line in enumerate(lines, 1):     # links all dirs to dirs they may contain
-    if '$ cd' in line and '..' not in line:
-        dir_name = line.split()[2]
-        for sub_line in lines[i:]:
-            if 'cd ..' in sub_line or  '$ cd' in sub_line:
-                break
-            if 'dir' in sub_line:
-                nodes[dir_name].children.append(nodes[sub_line.split()[1]])
-        
-        
-calculate_children_sum()
+# creer le node /
+nodes['/'] = createNode('/', None)
+working_dir = None
 
+for line in lines:
+    if 'cd ..' in line:
+        # changer le node courant en arriere
+        working_dir = working_dir.parent
+    if '$ cd' in line and 'cd ..' not in line:
+        # changer le node courant en avant
+        working_dir = nodes[line.split()[2]] # $ cd a --> 'a'
+    if 'dir ' in line:
+        # ajouter le node à la liste des enfants du node courant
+        name = line.split()[1]
+        nodes[name] = createNode(name, working_dir)
+        working_dir.children.append(nodes[name])
+    # si size
+    if line[0].isnumeric():     # 197934 sgwz.cdz
+        # augmenter le poids du node courant
+        working_dir.weight += int(line.split()[0])
+   
+# calculate_children_sum()
 
-answer = 0
-for node in nodes:
-    if nodes[node].weight <= 100000:
-        answer += nodes[node].weight
-        print(nodes[node].weight, answer)
+nodes['/'].count_children()
 
-print(answer)
+print(f"the answer is: {answer}")
